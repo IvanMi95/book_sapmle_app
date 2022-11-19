@@ -1,0 +1,5 @@
+
+When a method gets called on the class itself, as in the case of new, it’s
+called a class method. The result of calling new on a class is an object of
+that class, also called an instance of the class. A method called on an
+instance, such as length, is called an instance method.
