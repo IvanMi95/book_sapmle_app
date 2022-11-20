@@ -1,5 +1,29 @@
+*******************************
+git hub push procedure
 
+$ git add -A
+$ git commit -m "Finish layout and routes"
+$ git checkout main
+$ git merge filling-in-layout
+$ rails test
+$ git push
+
+*******************************User
 When a method gets called on the class itself, as in the case of new, it’s
 called a class method. The result of calling new on a class is an object of
 that class, also called an instance of the class. A method called on an
 instance, such as length, is called an instance method.
+
+• Most migrations (including all the ones in this tutorial) are
+reversible, which means we can “migrate down” and undo them with
+a single command, called db:rollback:
+$ rails db:rollback
+
+If for any reason something went wrong, you can always reset the database
+as follows:
+• Quit the console.
+• Run $ rm -f development.sqlite3 at the command line to remove
+the database. (We’ll learn a more elegant method for doing this in
+Chapter 7.)
+• Rerun the migrations using $ rails db:migrate.
+• Restart the console.
