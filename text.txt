@@ -27,3 +27,104 @@ the database. (We’ll learn a more elegant method for doing this in
 Chapter 7.)
 • Rerun the migrations using $ rails db:migrate.
 • Restart the console.
+************************************
+13.3.3 A Proto-Feed
+Although the micropost form is actually now working, users can’t
+immediately see the results of a successful submission because the
+current Home page doesn’t display any microposts. If you like, you can
+verify that the form shown in Figure 13.11 is working by submitting a
+valid entry and then navigating to the profile page to see the post, but
+that’s rather cumbersome. It would be far better to have a feed of
+microposts that includes the user’s own posts, as mocked up in Figure
+13.13. (In Chapter 14, we’ll generalize this feed to include the
+microposts of users being followed by the current user, à la Twitter.)
+Figure 13.13: A mockup of the Home page with a proto-feed.
+Since each user should have a feed, we are led naturally to a feed
+method in the User model, which will initially just select all the
+microposts belonging to the current user. We’ll accomplish this using
+the where method on the Micropost model (seen briefly before in
+Section 11.3.3), as shown in Listing 13.47.15
+15. See the Rails Guide on the Active Record Query Interface for more on where
+and related methods.
+Listing 13.47: A preliminary implementation for the micropost status
+feed.
+app/models/user.rb
+Click here to view code image
+class User < ApplicationRecord
+.
+.
+.
+# Defines a proto-feed.
+ # See "Following users" for the full implementation.
+def feed
+Micropost.where("user_id = ?", id)
+end
+private
+.
+.
+.
+end
+The question mark in
+Click here to view code image
+Micropost.where("user_id = ?", id)
+ensures that id is properly escaped before being included in the
+underlying SQL query, thereby avoiding a serious security hole called
+SQL injection. The id attribute here is just an integer (i.e., self.id, the
+unique ID of the user), so there is no danger of SQL injection in this
+case, but it does no harm, and always escaping variables injected into
+SQL statements is a good habit to cultivate.
+Alert readers might note at this point that the code in Listing 13.47 is
+essentially equivalent to writing
+def feed
+microposts
+end
+We’ve used the code in Listing 13.47 instead because it generalizes
+much more naturally to the full status feed needed in Chapter 14.
+To use the feed in the sample application, we add an @feed_items
+instance variable for the current user’s (paginated) feed, as in Listing
+13.48, and then add a status feed partial (Listing 13.49) to the Home
+page (Listing 13.50). Note that, now that there are two lines that need
+to be run when the user is logged in, Listing 13.48 changes
+Click here to view code image
+@micropost = current_user.microposts.build if logged_in?
+from Listing 13.41 to
+Click here to view code image
+if logged_in?
+@micropost = current_user.microposts.build
+@feed_items = current_user.feed.paginate(page: params[:page])
+end
+thereby moving the conditional from the end of the line to an if-end
+statement.
+Listing 13.48: Adding a feed instance variable to the home action.
+app/controllers/static_pages_controller.rb
+Click here to view code image
+class StaticPagesController < ApplicationController
+def home
+if logged_in?
+@micropost = current_user.microposts.build
+@feed_items = current_user.feed.paginate(page: params[:page])
+end
+end
+def help
+end
+def about
+end
+ def contact
+end
+end
+Listing 13.49: The status feed partial.
+app/views/shared/_feed.html.erb
+Click here to view code image
+<% if @feed_items.any? %>
+<ol class="microposts">
+<%= render @feed_items %>
+</ol>
+<%= will_paginate @feed_items %>
+<% end %>
+The status feed partial defers the rendering to the micropost partial
+defined in Listing 13.23:
+<%= render @feed_items %>
+Here Rails knows to call the micropost partial because each element of
+@feed_items has class Micropost. This causes Rails to look for a partial
+with the corresponding name in the views directory of the given
+resource
